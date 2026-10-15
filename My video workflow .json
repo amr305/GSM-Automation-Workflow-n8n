@@ -1,0 +1,212 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "video_subject"
+            },
+            {
+              "name": "video_script"
+            },
+            {
+              "name": "video_terms"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "dfddedf9-bf30-4fc2-b8e4-62e5d515f7af",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8080/api/v1/videos",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"video_subject\": {{ JSON.stringify($json.video_subject || \"Solar Feasibility Report\") }},\n  \"video_script\": {{ JSON.stringify($json.video_script || \"Solar energy solution for commercial buildings in Egypt.\") }},\n  \"video_terms\": \"solar panels, solar energy, green energy\",\n  \"tts_server\": \"elevenlabs\",\n  \"voice_name\": \"elevenlabs:onwK4e9ZLuTAKqWW03F9:Daniel - Steady Broadcaster\",\n  \"video_source\": \"pixabay\",\n  \"paragraph_number\": 1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        176,
+        0
+      ],
+      "id": "e01c474e-0cf4-48c0-b19d-4f335fb1b335",
+      "name": "Generate Video (MoneyPrinterTurbo)"
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "10eabcde-d238-4ea2-91ef-2273177f089a",
+      "name": "Wait",
+      "webhookId": "fb9a7aad-98be-4da5-b8c5-59eaedf5b731"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "195b5ea1-c903-4b32-bf6e-b99174110127",
+              "leftValue": "={{ $json.data.progress }}",
+              "rightValue": "=100",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        0
+      ],
+      "id": "7fbe2b47-2349-4292-9d94-9b6f73623ff7",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "=http://127.0.0.1:8080/api/v1/tasks/{{ $json.data.task_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        624,
+        0
+      ],
+      "id": "11e7a435-d46b-4756-b3dd-baad110b9b69",
+      "name": "Check Task Status"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "884190b9-ea26-497e-8b35-efb847f4cd4b",
+              "name": "video_url",
+              "value": "==http://127.0.0.1:8080{{ $json.data.videos[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1088,
+        -16
+      ],
+      "id": "cd7e1d94-449d-4624-a4ab-60cc8a2840f6",
+      "name": "video_url"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Generate Video (MoneyPrinterTurbo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Video (MoneyPrinterTurbo)": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Check Task Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Task Status": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "video_url",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3ffec96f-f5d3-4e3a-afa1-3bfdc62e7a71",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "52da43dd1eb61344d8968cd12584564325eed4c92f5bccfee2c319813c52a60e"
+  },
+  "nodeGroups": [],
+  "id": "vSdArYWmVr0peh8b",
+  "tags": []
+}

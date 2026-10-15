@@ -1,0 +1,450 @@
+{
+  "name": "My workflow 4",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Get all rows fetched from Google Sheets\nconst allRows = $input.all();\n\n// Pick the last row (the newest form response)\nconst latestLead = allRows[allRows.length - 1].json;\n\n// Extract and parse the bill number safely\nconst rawBill = latestLead[\"Monthly Electricity Bill (EGP)\"];\nconst parsedBill = typeof rawBill === 'number' \n  ? rawBill \n  : Number(String(rawBill || '').replace(/[^0-9.]/g, ''));\n\nreturn {\n  json: {\n    lead_name: latestLead[\"Full Name\"] || \"Client\",\n    lead_phone: latestLead[\"Phone Number\"] || \"\",\n    lead_sector: latestLead[\"Sector / System type\"] || \"Residential\",\n    monthly_bill_egp: parsedBill || 2000,\n    location: latestLead[\"City / Governorate\"] || \"Egypt\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        304
+      ],
+      "id": "ce9f37ba-3580-4502-8069-cd37d560595e",
+      "name": "Parse Lead Data1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert Solar Energy Engineering & Marketing Consultant for Green Sustainable Method (GSM) in Egypt.\n\nCLIENT PROFILE:\n- Name: {{ $('Parse Lead Data1').item.json.lead_name }}\n- Phone: {{ $('Parse Lead Data1').item.json.lead_phone }}\n- Sector: {{ $('Parse Lead Data1').item.json.lead_sector }}\n- Monthly Electricity Bill: {{ $('Parse Lead Data1').item.json.monthly_bill_egp }} EGP\n- Location: {{ $('Parse Lead Data1').item.json.location }}\n\nLIVE MARKET RESEARCH DATA (from DuckDuckGo):\n{{ $('Market Research Search(w DuckDuckGo)').item.json.data }}\n\nTASK:\nBased on the client's information and the provided real-time market research data, write a concise feasibility report covering:\n1. Technical Sizing: Estimated system capacity in kWp and required roof space in m².\n2. Financial Analysis: Estimated energy cost savings percentage and Payback Period / ROI.\n3. Sales Strategy: A quick, strategic pitch hook tailored for GSM sales representatives to reach out to this client.",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1520,
+        304
+      ],
+      "id": "4d9a5a5e-0112-492e-842a-f35892dfa742",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract plain text from DuckDuckGo HTML response\nconst rawHtml = $input.item.json.data || \"\";\nconst cleanText = rawHtml\n  .replace(/<script[^>]*>([\\s\\S]*?)<\\/script>/gi, \"\")\n  .replace(/<style[^>]*>([\\s\\S]*?)<\\/style>/gi, \"\")\n  .replace(/<[^>]+>/g, \" \")\n  .replace(/\\s+/g, \" \")\n  .trim();\n\nreturn {\n  clean_search_data: cleanText.substring(0, 2000) // Keep the top relevant market context\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        304
+      ],
+      "id": "874c197d-ccbb-4b77-829f-6d13c130fee2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "model": "llava:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        512
+      ],
+      "id": "e12a9f2d-e78c-494b-9802-02ef05d5e8a0",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "dxebuSyoPqIpZdTU",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1362415277",
+        "text": "=🚀 *NEW SOLAR LEAD - GSM ENERGY*  👤 *Client Information:* • *Name:* {{ $('Parse Lead Data1').item.json.lead_name }} • *Phone:* {{ $('Parse Lead Data1').item.json.lead_phone }} • *Sector:* {{ $('Parse Lead Data1').item.json.lead_sector }} • *Monthly Bill:* {{ $('Parse Lead Data1').item.json.monthly_bill_egp }} EGP • *Location:* {{ $('Parse Lead Data1').item.json.location }}  📊 *AI Feasibility & Sales Report:* {{ $json.text }}  --- ⚡ *Status:* Processed locally via GSM AI Engine",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2160,
+        304
+      ],
+      "id": "86452b2c-975b-4517-9bb7-f8e8f205f721",
+      "name": "Send a text message",
+      "webhookId": "e07b4730-e865-4a4c-ab4e-989f86a468ce",
+      "credentials": {
+        "telegramApi": {
+          "id": "lQZeliXroV9l5Vm8",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "amrxo015@gmail.com",
+        "toEmail": "amrxo015@gmail.com",
+        "subject": "=Solar Feasibility Assessment - GSM Energy ({{ $('Parse Lead Data1').item.json.lead_name }})",
+        "emailFormat": "text",
+        "text": "=New Solar Lead Feasibility Report\n=================================\n\nCLIENT DETAILS:\n• Name: {{ $('Parse Lead Data1').item.json.lead_name }}\n• Phone: {{ $('Parse Lead Data1').item.json.lead_phone }}\n• Sector: {{ $('Parse Lead Data1').item.json.lead_sector }}\n• Monthly Bill: {{ $('Parse Lead Data1').item.json.monthly_bill_egp }} EGP\n• Location: {{ $('Parse Lead Data1').item.json.location }}\n\nAI FEASIBILITY & SALES REPORT:\n{{ $json.text }}\n\n---------------------------------\nSent automatically via GSM Energy AI Engine.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2160,
+        64
+      ],
+      "id": "a7b6e0e7-2f19-473d-9740-460c410f0294",
+      "name": "Send an Email",
+      "webhookId": "868d47bf-7f7c-466e-9a4b-ba1a1a99a0a5",
+      "credentials": {
+        "smtp": {
+          "id": "vDSJbcoQlaBS1yWD",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vSdArYWmVr0peh8b",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vSdArYWmVr0peh8b",
+          "cachedResultName": "My workflow 3"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "video_subject": "=={{ $json.video_subject }}",
+            "video_terms": "={{ $json.video_terms }}",
+            "video_script": "=={{ $json.video_script }}"
+          },
+          "matchingColumns": [
+            ""
+          ],
+          "schema": [
+            {
+              "id": "video_subject",
+              "displayName": "video_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "video_script",
+              "displayName": "video_script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "video_terms",
+              "displayName": "video_terms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2368,
+        592
+      ],
+      "id": "a017dde6-ee7f-4b21-9350-0342d3970964",
+      "name": "Call ' video generation workflow '"
+    },
+    {
+      "parameters": {
+        "url": "https://html.duckduckgo.com/html/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "==\"Solar panels prices in Egypt\" + {{ $json.lead_sector }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1072,
+        304
+      ],
+      "id": "0e062900-b998-46c2-bc84-536a25d5065e",
+      "name": "Market Research Search(w DuckDuckGo)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and sanitize LLM output\nconst inputData = $input.first().json;\n\nfunction cleanScript(text) {\n  if (!text) return \"\";\n  return text\n    .replace(/\\\\n/g, ' ')                  // Remove literal newline strings\n    .replace(/[\\r\\n]+/g, ' ')              // Remove actual multiline breaks\n    .replace(/^\\d+\\.\\s*/gm, '')            // Remove list numbers like \"1. \"\n    .replace(/[#*_-]/g, '')                // Remove markdown syntax\n    .replace(/\\s+/g, ' ')                  // Collapse double spaces\n    .trim();\n}\n\nconst rawScript = inputData.video_script || inputData.text || \"\";\n\nreturn {\n  json: {\n    video_subject: inputData.video_subject || \"Solar Feasibility Report\",\n    video_script: cleanScript(rawScript),\n    video_terms: \"solar panels, rooftop solar energy, clean energy, house roof\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        592
+      ],
+      "id": "5f8db54e-ee6f-4d14-9eb1-4da51460bec2",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1YjmDipnu6J-NCMzEOhDvtg6L5uUQH2C0aK0lK6dXm5k",
+          "mode": "list",
+          "cachedResultName": "GSM_Leads_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YjmDipnu6J-NCMzEOhDvtg6L5uUQH2C0aK0lK6dXm5k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2120193157,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1YjmDipnu6J-NCMzEOhDvtg6L5uUQH2C0aK0lK6dXm5k/edit#gid=2120193157"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        544,
+        304
+      ],
+      "id": "ca07af08-5ccd-4818-a702-7a77d0638394",
+      "name": "Google Sheets Trigger",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "6C9whJTutaqAG7zF",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Zone 1: Data Trigger & Parsing\n\nfetches the data input from the users on google forms and saves it to google sheets for processing and researching",
+        "height": 288,
+        "width": 448,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        512,
+        192
+      ],
+      "typeVersion": 1,
+      "id": "85e40929-ccea-4302-9a2b-2efad2dadea7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Zone 2: Live Market Intelligence & Retrieval\n\nQueries (DuckDuckGo) agent for live tariff rates, solar equipment costs, and regional metrics to guarantee accurate feasibility data.",
+        "height": 288,
+        "width": 416,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1008,
+        192
+      ],
+      "typeVersion": 1,
+      "id": "aa1927c4-08ff-48e3-b604-f4e11482c8f8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Zone 3: Generative AI Reasoning\n (LLM Leverages local Multimodal LLMs (LLaVA via Ollama) to analyze complex data, perform technical reasoning, and dynamically synthesize omni-channel content—ranging from technical feasibility video scripts and persuasive ad copy to tailored messaging optimized for viral social media outreach.",
+        "height": 544,
+        "width": 352,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1472,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "ccc63caf-aca3-4a28-a8bc-99c9e2da4715",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Zone 4: Automated Video Production Engine\n\nOrchestrates local MoneyPrinterTurbo rendering, ElevenLabs neural voice synthesis, and dynamic media stitching.",
+        "height": 336,
+        "width": 432,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2112,
+        480
+      ],
+      "typeVersion": 1,
+      "id": "11306391-ba5b-4b0b-829c-98dadcb1922d",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "Zone 5: Multi-Channel Automated Outreach\n\nInstantly dispatches personalized email proposals and Telegram notifications to leads and sales reps upon generation.",
+        "height": 512,
+        "width": 368,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2112,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "2910edaa-327a-489e-8ace-0a984f94e895",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parse Lead Data1": {
+      "main": [
+        [
+          {
+            "node": "Market Research Search(w DuckDuckGo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Market Research Search(w DuckDuckGo)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Call ' video generation workflow '",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call ' video generation workflow '": {
+      "main": [
+        []
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Lead Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5997157e-38be-4fac-a436-b4ef9caba2ea",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "52da43dd1eb61344d8968cd12584564325eed4c92f5bccfee2c319813c52a60e"
+  },
+  "nodeGroups": [],
+  "id": "f6HRYCEd2O2gf049",
+  "tags": []
+}
