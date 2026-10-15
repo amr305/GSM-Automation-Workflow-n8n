@@ -91,8 +91,8 @@
     },
     {
       "parameters": {
-        "fromEmail": "amrxo015@gmail.com",
-        "toEmail": "amrxo015@gmail.com",
+      "fromEmail": "your-email@example.com",
+      "toEmail": "your-email@example.com",
         "subject": "=Solar Feasibility Assessment - GSM Energy ({{ $('Parse Lead Data1').item.json.lead_name }})",
         "emailFormat": "text",
         "text": "=New Solar Lead Feasibility Report\n=================================\n\nCLIENT DETAILS:\n• Name: {{ $('Parse Lead Data1').item.json.lead_name }}\n• Phone: {{ $('Parse Lead Data1').item.json.lead_phone }}\n• Sector: {{ $('Parse Lead Data1').item.json.lead_sector }}\n• Monthly Bill: {{ $('Parse Lead Data1').item.json.monthly_bill_egp }} EGP\n• Location: {{ $('Parse Lead Data1').item.json.location }}\n\nAI FEASIBILITY & SALES REPORT:\n{{ $json.text }}\n\n---------------------------------\nSent automatically via GSM Energy AI Engine.",
